@@ -1,38 +1,42 @@
-# Docs for the Azure Web Apps Deploy action: https://go.microsoft.com/fwlink/?linkid=2134798
-# More GitHub Actions for Azure: https://go.microsoft.com/fwlink/?linkid=2135048
+from flask import Flask, render_template, request, abort, redirect, url_for, make_response
 
-name: Azure App Service - cezaryszczepaniak(Production), Build and deploy Python app
+app = Flask(__name__)
 
-on:
-  push:
-    branches:
-      - main
+@app.route('/index')
+@app.route('/')
+def home():
+    return render_template('index.html')
 
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+@app.route("/aboutme")
+def aboutme():
+    return app.send_static_file("aboutme.html")
 
-    steps:
-    # checkout the repo
-    - name: 'Checkout Github Action'
-      uses: actions/checkout@master
+@app.route("/gallery")
+def gallery():
+    return app.send_static_file('gallery.html')
 
+@app.route("/contact")
+def contact():
+    return app.send_static_file('contact.html')
 
-    - name: Set up Python version
-      uses: actions/setup-python@v1
-      with:
-        python-version: '3.8'
+@app.route('/error_denied')
+def error_denied():
+    abort(401)
 
-    - name: Build using AppService-Build
-      uses: azure/appservice-build@v2
-      with:
-        platform: python
-        platform-version: '3.8'
+@app.route('/error_internal')
+def error_internal():
+    return render_template('template.html', name='ERROR 505'), 505
 
-    - name: Run Azure webapp deploy action using publish profile credentials
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: cezaryszczepaniak
-        slot-name: Production
-        publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_E1ED2AD5C2DC41349BA4DEEEC7DCBFCB }}
+@app.route('/error_not_found')
+def error_not_found():
+    response = make_response(render_template('template.html', name='ERROR 404'), 404)
+    response.headers['X-Something'] = 'A value'
+    return response
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
+    
+    app.run(host='127.0.0.1', port=5000)
+if __name__ == '__main__':
 
